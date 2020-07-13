@@ -7,21 +7,21 @@ svn --version >/dev/null
 git --version >/dev/null
 tar --version >/dev/null
 
-# Determine SCRIPT_DIR
+# Determine script_dir
 # Resolve links: $0 may be a link
-PRG="$0"
+prg="$0"
 # Need this for relative symlinks.
-while [ -h "$PRG" ]; do
-    ls=$(ls -ld "$PRG")
+while [ -h "$prg" ]; do
+    ls=$(ls -ld "$prg")
     link=$(expr "$ls" : '.*-> \(.*\)$')
     if expr "$link" : '/.*' >/dev/null; then
-        PRG="$link"
+        prg="$link"
     else
-        PRG=$(dirname "$PRG")"/$link"
+        prg=$(dirname "$prg")"/$link"
     fi
 done
-cd "$(dirname "$PRG")/" >/dev/null
-SCRIPT_DIR="$(pwd -P)"
+cd "$(dirname "$prg")/" >/dev/null
+script_dir="$(pwd -P)"
 
 if [ "${1-}" == "--no-make" ]; then
     shift
@@ -30,12 +30,20 @@ else
     make
 fi
 
-if [ $# -eq 0 ]; then
-    set -- test
-else
-    set -- "${@/#/test/}"
-    set -- "${@/%/.bats}"
-fi
+args=()
+test_given=""
+for arg in "$@"; do
+    if [[ "$(echo "$arg/"*.bats)" != *\** ]]; then
+        args+=("$arg")
+        test_given="test_given"
+    elif [ -f "test/$arg.bats" ]; then
+        args+=("test/$arg.bats")
+        test_given="test_given"
+    else
+        args+=("$arg")
+    fi
+done
+[ "$test_given" ] || args+=("test")
 
-mkdir -p "$SCRIPT_DIR/build/tmp"
-TMPDIR="$SCRIPT_DIR/build/tmp" test/libs/bats-core/bin/bats "$@"
+mkdir -p "$script_dir/build/tmp"
+TMPDIR="$script_dir/build/tmp" test/libs/bats-core/bin/bats "${args[@]}"

@@ -27,7 +27,7 @@ setup() {
 
     run svn2git --non-existing repo-a repo-b -v
     assert_success
-    assert_output --partial 'Git version:'
+    assert_output --partial 'Git versions:'
 }
 
 @test 'specifying help parameter should output usage and exit with 0 no matter what' {
@@ -37,7 +37,7 @@ setup() {
 
     run svn2git --non-existing repo-a --help repo-b
     assert_success
-    assert_output --partial 'Usage:'
+    assert_output --partial 'Usages:'
 
     run svn2git --non-existing repo-a repo-b --help
     assert_success

@@ -24,5 +24,5 @@ load 'common.bash'
         end match
     ")
 
-    assert git -C git-repo show master:dir-a/file-a
+    assert git -C git-repo show master:dir-a/file-a2
 }

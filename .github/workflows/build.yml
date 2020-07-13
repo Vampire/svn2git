@@ -1,0 +1,145 @@
+#
+# Copyright (C) 2020  Sebastian Pipping <sebastian@pipping.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+name: Build
+
+on:
+  pull_request:
+  push:
+#TODO
+#  schedule:
+#    - cron: 0/5 * * * *
+
+#TODO
+#strategy:
+#  matrix:
+#    os: [ubuntu-latest, windows-latest, macos-latest]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+#      - name: Install Qt
+#        uses: jurplel/install-qt-action@v2
+#        with:
+#          version: 5.15.0
+#          arch: win64_mingw81
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v1
+        with:
+          cache: true
+          install:
+            unzip
+            base-devel
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-qt5
+            mingw-w64-x86_64-libtool
+            mingw-w64-x86_64-apr
+            mingw-w64-x86_64-apr-util
+            mingw-w64-x86_64-sqlite3
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-lz4
+            mingw-w64-x86_64-libutf8proc
+#            mingw-w64-qt5-static
+
+      - name: Install build dependencies on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            libapr1-dev \
+            libsvn-dev
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Build Subversion Dependency
+        env:
+          MSYSTEM: MSYS
+        shell: msys2 {0}
+        run: |
+          set -e
+          cd mingw-w64-subversion
+          makepkg-mingw -sCLf
+          ls -alhtr
+          pacman -U mingw-w64-*-subversion-*-any.pkg.tar.xz
+
+      - name: Configure
+        shell: msys2 {0}
+        run: qmake
+
+      - name: Build
+        id: build
+        shell: msys2 {0}
+        run: make
+
+      - name: Test
+        id: test
+        run: |
+          mkdir -p build/test-results/
+          ./test.sh --no-make --formatter junit --output build/test-results/
+
+      - name: Publish Test Report using scacap/action-surefire-report
+        if: always() && steps.test.outcome != 'skipped'
+        uses: scacap/action-surefire-report@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          report_paths: build/test-results/*.xml
+          check_name: Test Report
+
+      - name: Publish Test Report using ashley-taylor/junit-report-annotations-action
+        if: always() && steps.test.outcome != 'skipped'
+        uses: ashley-taylor/junit-report-annotations-action@1.3
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          path: build/test-results/*.xml
+          numFailures: 999999
+          name: Test Report
+
+      - name: Generate Test Report using AutoModality/action-xunit-viewer
+        id: generate-test-report
+        if: always() && steps.test.outcome != 'skipped'
+        uses: AutoModality/action-xunit-viewer@v1
+        with:
+          results: build/test-results/
+          title: Test Report for ${{ github.repository }}
+          output: build/reports/tests/index.html
+
+      - name: Publish Test Report using AutoModality/action-xunit-viewer
+        if: always() && steps.generate-test-report.outcome == 'success'
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test Report (HTML)
+          path: ${{ steps.generate-test-report.outputs.report-dir }}
+
+      - name: Publish XML test results
+        if: always() && steps.test.outcome != 'skipped'
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test Results (XML)
+          path: build/test-results/
+
+      - name: Install
+        if: always() && steps.build.outcome == 'success'
+        shell: msys2 {0}
+        run: |
+          set -e
+          make INSTALL_ROOT="${PWD}"/ROOT install
+          find ROOT | sort

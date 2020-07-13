@@ -2,7 +2,7 @@ if(!defined(SVN_INCLUDE, var)) {
   SVN_INCLUDE = /usr/include/subversion-1 /usr/local/include/subversion-1
 }
 if(!defined(APR_INCLUDE, var)) {
-  APR_INCLUDE = /usr/include/apr-1.0 /usr/include/apr-1 /usr/local/include/apr-1
+  APR_INCLUDE = /usr/include/apr-1.0 /usr/include/apr-1 /usr/local/include/apr-1 /mingw64/include/apr-1
 }
 exists(local-config.pri):include(local-config.pri)
 

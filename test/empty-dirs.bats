@@ -1,4 +1,4 @@
-load 'common'
+load 'common.bash'
 
 @test 'empty-dirs parameter should put empty .gitignore files to empty directories' {
     svn mkdir dir-a

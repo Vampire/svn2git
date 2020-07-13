@@ -1,4 +1,4 @@
-load 'common'
+load 'common.bash'
 
 @test 'copying a directory with source not in target repo should dump full directory' {
     svn mkdir --parents project-a/dir-a

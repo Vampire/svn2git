@@ -1,4 +1,4 @@
-load 'common'
+load 'common.bash'
 
 @test 'svn:ignore entries should only ignore matching direct children' {
     svn mkdir dir-a

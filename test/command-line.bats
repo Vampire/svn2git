@@ -1,4 +1,4 @@
-load 'common'
+load 'common.bash'
 
 setup() {
     : # suppress common setup, no repository needed

@@ -1,6 +1,6 @@
-load 'libs/bats-support/load'
-load 'libs/bats-assert/load'
-load 'libs/bats-file/load'
+load 'libs/bats-support/load.bash'
+load 'libs/bats-assert/load.bash'
+load 'libs/bats-file/load.bash'
 
 setup() {
     commonSetup
